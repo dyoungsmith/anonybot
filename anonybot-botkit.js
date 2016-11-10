@@ -3,7 +3,6 @@
 const Botkit = require('botkit');
 const token = require('./token.js');
 const controller = Botkit.slackbot({ debug: false });
-// {anonybot: U2YKC4UDQ, dyoungsmith: U2QGDD3SN, eliotpszw: U1UQF9K5H}
 const fellows = require('./fellows.js'); // array of fellowIDs
 
 
