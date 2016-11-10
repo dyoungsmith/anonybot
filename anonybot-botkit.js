@@ -4,7 +4,7 @@ const Botkit = require('botkit');
 const token = require('./token.js');
 const controller = Botkit.slackbot({ debug: false });
 // {anonybot: U2YKC4UDQ, dyoungsmith: U2QGDD3SN, eliotpszw: U1UQF9K5H}
-const fellows = ['U1UQF9K5H', 'U2QGDD3SN']
+const fellows = require('./fellows.js'); // array of fellowIDs
 
 
 // New bot instantiation
@@ -17,53 +17,61 @@ bot.startRTM((err, bot, payload) => {
 	if (err) console.error(err);
 });
 
-// will have to do a regex for Q's
-// Direct message between student and slackbot
-controller.hears('hello', ['direct_message'], (bot, message) => {
-	bot.startPrivateConversation({user: 'U2QGDD3SN'}, (err, convo) => {
+// Slackbot mentions in a large channel >> start DM convo
+controller.hears('\S|[?]$', ['direct_mention', 'mention'], (bot, message) => {
+	bot.startPrivateConversation({user: message.user}, (err, convo) => {
 		if (err) console.error(err);
-		else {
-			// take out anonybot mention
-			convo.say(`*A student has asked a question:* ${message.text}`);
-			bot.reply(message, 'Your question has been sent to a fellow anonymously! _Shhhhhh!_');
-		}
+		convo.say('Heyyy, that doesn\'t seem very anonymous! Let\'s talk in _here_. \n What\'s your question?');
 	});
 });
 
-// Slackbot mentions in a large channel
-controller.hears('hello', ['direct_mention', 'mention'], (bot, question) => {
-	// for (let fellow of fellows) {
-	// 	bot.say({
-	// 		text: `*Someone has asked a question:* ${message.text}`,
-	// 		channel: fellow
-	// 	});
-	// }
+// Direct messages between student and slackbot
+controller.hears('\S|[?]$', ['direct_message'], (bot, question) => {
+	let confirmSent = `Your question has been sent anonymously: _${question.text}_`;
 
-	bot.startPrivateConversation({user: 'U2QGDD3SN'}, (err, fellowConvo) => {
-		if (err) console.error(err);
-		else {
+	let talkToStudent = (messageForStudent) => {
+		bot.reply(question, messageForStudent);
+		// bot.reply({user: studentId}, (err, studentConvo) => {
+		// 	if (err) console.error(err);
+		// 	studentConvo.say(messageForStudent);
+		// });
+	};
+
+	for (let fellow of fellows) {
+		bot.startPrivateConversation({user: fellow}, (err, fellowConvo) => {
+			if (err) console.error(err);
 			// take out anonybot mention
-			fellowConvo.say(`*A student has asked a question:* ${question.text}`);
-			console.log('FELLOW CONVO', fellowConvo);
-			bot.startPrivateConversation({user: question.user}, (err, studentConvo) => {
-				if (err) console.error(err);
-				else {
-					studentConvo.say('Your question has been sent to a fellow anonymously! _Shhhhhh!_');
-					console.log('STUDENT CONVO', studentConvo);
-				}
-			});
-		}
-	});
+			fellowConvo.say(`*A student has asked a question:* _${question.text}_`);
 
-	// bot.startPrivateConversation(message, (err, convo) => {
-	// 	if (err) console.error(err);
-	// 	else {
-	// 		bot.reply(message, 'Your question has been sent to a fellow anonymously!');
-	// 	}
-	// });
+
+			// Does fellow ask instructor or answer directly?
+			fellowConvo.ask(`Would you like to respond? (_${question.text}_)`, [
+				{
+					pattern: bot.utterances.no,
+					callback: (res, fellowConvo) => {
+						fellowConvo.say('Okay, holla atcha instructor then!');
+					}
+				}, {
+					pattern: bot.utterances.yes,
+					callback: (res, fellowConvo) => {
+						fellowConvo.next();
+					}
+				}
+			]);
+
+			// Direct response to student
+			fellowConvo.ask('So what\'s your answer?', (res, fellowConvo) => {
+				let fellowAnswer = `*You've got an answer!* ${res.text}`;
+				talkToStudent(fellowAnswer);
+			});
+		});
+	}
+
+	talkToStudent(confirmSent);
 });
 
 // Slash commands in a large channel
+// need to intercept from channel so it's not out in the open
 // controller.on('slash_command', (bot, message) => {
 // 	bot.replyPrivate(message, 'This is just to you?');
 // });
