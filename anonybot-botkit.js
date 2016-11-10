@@ -1,19 +1,20 @@
 'use strict';
 
 const Botkit = require('botkit');
-const token = require('./token.js');
-const controller = Botkit.slackbot({ debug: false });
-const fellows = require('./fellows.js'); // array of fellowIDs
+const controller = Botkit.slackbot({ debug: false }); 
+
+let {TOKEN, ELIOT, DANI} = require('./env-index.js');
+const FELLOWS = [ELIOT, DANI];
 
 
 // New bot instantiation
 const bot = controller.spawn({
-	token,
+	token: TOKEN,
 	name: 'anonybot'
 });
 
 bot.startRTM((err, bot, payload) => {
-	if (err) console.error(err);
+	if (err) console.error('MY ERROR MSG:', err);
 });
 
 // Slackbot mentions in a large channel >> start DM convo
@@ -34,12 +35,10 @@ controller.hears('\S|[?]$', ['direct_message'], (bot, question) => {
 		bot.reply(question, messageForStudent);
 	};
 
-	for (let fellow of fellows) {
+	for (let fellow of FELLOWS) {
 		bot.startPrivateConversation({user: fellow}, (err, fellowConvo) => {
 			if (err) console.error(err);
-			// take out anonybot mention
 			fellowConvo.say(`*A student has asked a question:* _${question.text}_`);
-
 
 			// Does fellow ask instructor or answer directly?
 			fellowConvo.ask(`Would you like to respond?`, [
