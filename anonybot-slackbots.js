@@ -1,6 +1,6 @@
 'use strict';
 
-const SlackBot = require('slackbots');
+// const SlackBot = require('slackbots');
 const token = require('./token.js');
 
 // import SlackBot from 'slackbots';
