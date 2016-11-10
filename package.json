@@ -10,7 +10,7 @@
   },
   "license": "ISC",
   "engines": {
-    "npm": "6.1.x"
+    "npm": "6.1.0"
   },
   "dependencies": {
     "bluebird": "^3.4.6",
