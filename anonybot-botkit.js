@@ -21,7 +21,9 @@ bot.startRTM((err, bot, payload) => {
 controller.hears('\S|[?]$', ['direct_mention', 'mention'], (bot, message) => {
 	bot.startPrivateConversation({user: message.user}, (err, convo) => {
 		if (err) console.error(err);
-		convo.say('Heyyy, that doesn\'t seem very anonymous! Let\'s talk in _here_. \n What\'s your question?');
+		convo.say('Heyyy, that doesn\'t seem very anonymous!');
+		convo.say('Let\'s talk in _here_.');
+		convo.say('What\'s your question?');
 	});
 });
 
@@ -31,10 +33,6 @@ controller.hears('\S|[?]$', ['direct_message'], (bot, question) => {
 
 	let talkToStudent = (messageForStudent) => {
 		bot.reply(question, messageForStudent);
-		// bot.reply({user: studentId}, (err, studentConvo) => {
-		// 	if (err) console.error(err);
-		// 	studentConvo.say(messageForStudent);
-		// });
 	};
 
 	for (let fellow of fellows) {
@@ -45,11 +43,12 @@ controller.hears('\S|[?]$', ['direct_message'], (bot, question) => {
 
 
 			// Does fellow ask instructor or answer directly?
-			fellowConvo.ask(`Would you like to respond? (_${question.text}_)`, [
+			fellowConvo.ask(`Would you like to respond?`, [
 				{
 					pattern: bot.utterances.no,
 					callback: (res, fellowConvo) => {
 						fellowConvo.say('Okay, holla atcha instructor then!');
+						fellowConvo.stop();	// need a better method, want to respond and then end convo
 					}
 				}, {
 					pattern: bot.utterances.yes,
@@ -60,9 +59,10 @@ controller.hears('\S|[?]$', ['direct_message'], (bot, question) => {
 			]);
 
 			// Direct response to student
-			fellowConvo.ask('So what\'s your answer?', (res, fellowConvo) => {
+			fellowConvo.ask(`So what\'s your answer? (_${question.text}_)`, (res, fellowConvo) => {
 				let fellowAnswer = `*You've got an answer!* ${res.text}`;
 				talkToStudent(fellowAnswer);
+				fellowConvo.next();
 			});
 		});
 	}
