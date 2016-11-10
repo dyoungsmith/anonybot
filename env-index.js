@@ -1,7 +1,4 @@
-const devEnv = require('./env-dev.js');
-const productionEnv = require('./env-production.js');
-
 if (process.env.NODE_ENV === 'production') {
-	module.exports = productionEnv;
+	module.exports = require('./env-production.js');
 }
-else module.exports = devEnv;
+else module.exports = require('./env-dev.js');
